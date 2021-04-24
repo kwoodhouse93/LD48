@@ -3,10 +3,17 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
 {
+    private enum Tools
+    {
+        Jump,
+        Rope,
+    }
+
     [Header("References")]
     [SerializeField] private Transform groundCheck;
     [SerializeField] private LaunchArcRenderer launchArc;
     [SerializeField] private HealthBar healthBar;
+    [SerializeField] private Rope rope;
 
     [Header("Movement parameters")]
     [SerializeField] private float walkForceScale;
@@ -27,7 +34,9 @@ public class PlayerController : MonoBehaviour
     // State variables
     private bool dead;
     private bool aiming;
+    private bool roped;
     private float curHealth;
+    private Tools selected;
 
     void Start()
     {
@@ -69,10 +78,30 @@ public class PlayerController : MonoBehaviour
             rb.AddTorque(deathTorque);
         }
 
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            selected = Tools.Jump;
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            selected = Tools.Rope;
+        }
+
+        if (roped)
+        {
+            if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
+            {
+                rope.DestroyRope();
+                roped = false;
+            }
+            // Rope movement
+            return;
+        }
+
         if (aiming)
         {
             // Allow cancel with right click or escape
-            if (Input.GetMouseButton(1) || Input.GetKey(KeyCode.Escape))
+            if (Input.GetMouseButton(1) || Input.GetKey(KeyCode.Space))
             {
                 aiming = false;
                 ClearArc();
@@ -90,7 +119,17 @@ public class PlayerController : MonoBehaviour
 
                 if (IsGrounded())
                 {
-                    Launch(force);
+                    switch (selected)
+                    {
+                        case Tools.Jump:
+                            Launch(force);
+                            break;
+                        case Tools.Rope:
+                            DeployRope(force);
+                            roped = true;
+                            break;
+
+                    }
                 }
                 return;
             }
@@ -149,6 +188,16 @@ public class PlayerController : MonoBehaviour
     private void Launch(Vector3 force)
     {
         rb.AddForce(force, ForceMode2D.Impulse);
+    }
+
+    private void DeployRope(Vector3 force)
+    {
+        Vector3 ropeSource = new Vector3(
+            transform.position.x + (force.normalized.x * 0.5f),
+            transform.position.y - 0.3f,
+            0
+        );
+        rope.CreateRope(ropeSource, force);
     }
 
     private void DrawArc(Vector3 force)

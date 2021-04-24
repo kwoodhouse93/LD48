@@ -44,6 +44,7 @@ public class GameRenderer : MonoBehaviour
         spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
         Rect rect = new Rect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
         spriteRenderer.sprite = Sprite.Create(texture, rect, Vector2.one * .5f, (CANVAS_HEIGHT / 2) / Camera.main.orthographicSize);
+        spriteRenderer.sortingLayerID = SortingLayer.NameToID("BG");
 
         // Set up gradients for sampling
         // skyGradient.SetKeys(skyGradientColorKeys, skyGradientAlphaKeys);
@@ -52,7 +53,7 @@ public class GameRenderer : MonoBehaviour
     void Update()
     {
         DrawSky();
-        DrawPlayer();
+        // DrawPlayer();
     }
 
     void LateUpdate()
