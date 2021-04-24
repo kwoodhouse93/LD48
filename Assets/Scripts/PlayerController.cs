@@ -154,7 +154,6 @@ public class PlayerController : MonoBehaviour
         rb.MovePosition(playerPos);
 
         float horizontal = Input.GetAxisRaw("Horizontal");
-        Debug.Log("swing input: " + horizontal);
         rope.AddForceAtSegment(lowerIndex, new Vector2(horizontal, 0) * ropeSwingForce);
     }
 

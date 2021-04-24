@@ -25,7 +25,7 @@ public class RopeSegment : MonoBehaviour
         Vector2 s = spriteRenderer.size;
         s.x = width;
         spriteRenderer.size = s;
-        boxCollider2D.size = s;
+        boxCollider2D.size = s * 1.1f;
     }
 
     public void SetLength(float l)
