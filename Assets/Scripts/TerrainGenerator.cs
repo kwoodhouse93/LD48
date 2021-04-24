@@ -52,7 +52,7 @@ public class TerrainGenerator : MonoBehaviour
                 for (int y = 0; y < height; y++)
                 {
                     Color c = RenderPixel(x, y, leftMap, rightMap);
-                    if (c == Color.red)
+                    if (c != Color.magenta)
                         colors[y * renderWidth + x] = c;
                 }
             }
@@ -68,18 +68,19 @@ public class TerrainGenerator : MonoBehaviour
 
     private Color RenderPixel(int x, int y, float[] leftMap, float[] rightMap)
     {
+        Color groundColor = new Color32(106, 74, 43, 255);
         float noise;
         if (x <= renderWidth / 2)
         {
             noise = leftMap[y] * renderWidth / 2;
-            if (noise > x) return Color.red;
-            return Color.cyan;
+            if (noise > x) return groundColor;
+            return Color.magenta;
         }
         else
         {
             noise = rightMap[y] * renderWidth / 2 + renderWidth / 2;
-            if (noise < x) return Color.red;
-            return Color.cyan;
+            if (noise < x) return groundColor;
+            return Color.magenta;
         }
     }
 

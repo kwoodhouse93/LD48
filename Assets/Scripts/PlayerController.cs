@@ -14,6 +14,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private LaunchArcRenderer launchArc;
     [SerializeField] private HealthBar healthBar;
     [SerializeField] private Rope rope;
+    [SerializeField] private GameObject spawnOnDeath;
+    [SerializeField] private GameObject spawnOnCollision;
 
     [Header("Movement parameters")]
     [SerializeField] private float walkForceScale;
@@ -28,7 +30,6 @@ public class PlayerController : MonoBehaviour
     [Header("Health parameters")]
     [SerializeField] private float maxHealth;
     [SerializeField] private float fallDamageThreshold;
-
 
     // Component references
     private Rigidbody2D rb;
@@ -49,6 +50,9 @@ public class PlayerController : MonoBehaviour
 
     // Physics jank
     private Vector2 lastPos;
+
+    // Public accessors
+    public bool IsDead => dead;
 
     void Start()
     {
@@ -120,8 +124,11 @@ public class PlayerController : MonoBehaviour
 
     private void CheckHealth()
     {
-        if (curHealth < 0)
+        if (!dead && curHealth < 0)
         {
+            if (spawnOnDeath != null)
+                Object.Instantiate(spawnOnDeath, transform.position, transform.rotation);
+
             dead = true;
             rb.constraints = RigidbodyConstraints2D.None;
 

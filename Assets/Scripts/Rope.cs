@@ -54,6 +54,7 @@ public class Rope : MonoBehaviour
 
         ropeSource = new Vector3(startPos.x, startPos.y, 0);
         Vector3 startPoint = ropeSource;
+        float startAngle = 0;
         for (int i = 0; i < segmentCount; i++)
         {
             GameObject r = Object.Instantiate(ropeSegment, startPoint, Quaternion.identity);
@@ -77,7 +78,8 @@ public class Rope : MonoBehaviour
                 r.GetComponent<Rigidbody2D>().AddForce(f, ForceMode2D.Impulse);
             }
 
-            startPoint += endForce.normalized * spawnSeparation;
+            startPoint += Quaternion.AngleAxis(startAngle, Vector3.forward) * endForce.normalized * spawnSeparation;
+            startAngle += 40 + (5 * i);
 
             ropeSegments.Add(r);
         }
