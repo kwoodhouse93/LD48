@@ -1,11 +1,8 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(BoxCollider2D), typeof(SpriteRenderer))]
+[RequireComponent(typeof(BoxCollider2D))]
 public class RopeSegment : MonoBehaviour
 {
-    private SpriteRenderer spriteRenderer;
     private BoxCollider2D boxCollider2D;
     private HingeJoint2D startHinge;
     private HingeJoint2D endHinge;
@@ -15,25 +12,25 @@ public class RopeSegment : MonoBehaviour
 
     void Awake()
     {
-        spriteRenderer = GetComponent<SpriteRenderer>();
         boxCollider2D = GetComponent<BoxCollider2D>();
     }
+
+    public Vector3 LocalStart => new Vector3(0, length / 2, 0);
+    public Vector3 LocalEnd => new Vector3(0, -length / 2, 0);
 
     public void SetWidth(float w)
     {
         width = w;
-        Vector2 s = spriteRenderer.size;
+        Vector2 s = boxCollider2D.size;
         s.x = width;
-        spriteRenderer.size = s;
         boxCollider2D.size = s * 1.1f;
     }
 
     public void SetLength(float l)
     {
         length = l;
-        Vector2 s = spriteRenderer.size;
+        Vector2 s = boxCollider2D.size;
         s.y = l;
-        spriteRenderer.size = s;
         boxCollider2D.size = s;
     }
 
@@ -45,8 +42,10 @@ public class RopeSegment : MonoBehaviour
         {
             startHinge = gameObject.AddComponent<HingeJoint2D>();
         }
+        startHinge.autoConfigureConnectedAnchor = false;
         startHinge.connectedBody = null;
-        startHinge.anchor = new Vector2(0, length / 2);
+        startHinge.anchor = LocalStart;
+        startHinge.connectedAnchor = transform.TransformPoint(LocalStart);
     }
 
     public void ConnectStart(Rigidbody2D connectTo, bool connectingInRope)
@@ -57,17 +56,14 @@ public class RopeSegment : MonoBehaviour
         {
             startHinge = gameObject.AddComponent<HingeJoint2D>();
         }
+        startHinge.autoConfigureConnectedAnchor = false;
         startHinge.connectedBody = connectTo;
-        startHinge.anchor = new Vector2(0, length / 2);
+        startHinge.anchor = LocalStart;
         if (connectingInRope)
         {
-            startHinge.autoConfigureConnectedAnchor = false;
-            startHinge.connectedAnchor = new Vector2(0, -(length / 2));
-            // startHinge.useLimits = true;
-            // JointAngleLimits2D limits = new JointAngleLimits2D();
-            // limits.max = 105;
-            // limits.min = 435;
-            // startHinge.limits = limits;
+            // This should really be the LocalEnd of the connected body. Making an assumption here that it
+            // is an identical RopeSegment.
+            startHinge.connectedAnchor = LocalEnd;
         }
     }
 }

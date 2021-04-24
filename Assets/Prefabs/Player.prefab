@@ -57,7 +57,8 @@ MonoBehaviour:
   launchForceScale: 5
   maxLaunchForce: 7
   ropeMoveSpeed: 0.2
-  ropeSwingForce: 0
+  ropeSwingForce: 1
+  ropeJumpVelocity: 2
   groundCheckRadius: 0.1
   groundLayers:
     serializedVersion: 2

@@ -4,16 +4,49 @@ using UnityEngine;
 [RequireComponent(typeof(LineRenderer))]
 public class Rope : MonoBehaviour
 {
+    [Header("Dimensions")]
     [SerializeField] private int segmentCount;
     [SerializeField] private float segmentWidth;
     [SerializeField] private float segmentLength;
+
+    [Header("Spawning")]
     [SerializeField] private float spawnSeparation;
     [SerializeField] private float maxThrowForce;
+
+    [Header("Physics")]
     [SerializeField] private LayerMask groundLayers;
+
+    [Header("References")]
     [SerializeField] private GameObject ropeSegment;
 
     private Vector2 ropeSource;
     private List<GameObject> ropeSegments = new List<GameObject>();
+    private LineRenderer lineRenderer;
+    private bool active;
+
+    void Awake()
+    {
+        lineRenderer = GetComponent<LineRenderer>();
+    }
+
+    void Update()
+    {
+        DrawRope();
+    }
+
+    public void DrawRope()
+    {
+        if (!active) return;
+
+        Vector3[] positions = new Vector3[ropeSegments.Count + 1];
+        for (int i = 0; i < ropeSegments.Count; i++)
+        {
+            positions[i] = ropeSegments[i].transform.TransformPoint(ropeSegments[i].GetComponent<RopeSegment>().LocalStart);
+        }
+        positions[ropeSegments.Count] = ropeSegments[ropeSegments.Count - 1].transform.TransformPoint(ropeSegments[ropeSegments.Count - 1].GetComponent<RopeSegment>().LocalEnd);
+        lineRenderer.positionCount = ropeSegments.Count + 1;
+        lineRenderer.SetPositions(positions);
+    }
 
     public void CreateRope(Vector3 startPos, Vector3 endForce)
     {
@@ -48,10 +81,14 @@ public class Rope : MonoBehaviour
 
             ropeSegments.Add(r);
         }
+        active = true;
+        lineRenderer.enabled = true;
     }
 
     private void DestroyRope()
     {
+        active = false;
+        lineRenderer.enabled = false;
         foreach (GameObject r in ropeSegments)
         {
             Object.Destroy(r);

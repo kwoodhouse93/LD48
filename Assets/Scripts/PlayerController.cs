@@ -21,6 +21,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float maxLaunchForce;
     [SerializeField] private float ropeMoveSpeed;
     [SerializeField] private float ropeSwingForce;
+    [SerializeField] private float ropeJumpVelocity;
     [SerializeField] private float groundCheckRadius = 0.1f;
     [SerializeField] private LayerMask groundLayers;
 
@@ -33,13 +34,21 @@ public class PlayerController : MonoBehaviour
     private Rigidbody2D rb;
     private LineRenderer lr;
 
+    // Input
+    float horizontal;
+    float vertical;
+
     // State variables
     private bool dead;
     private bool aiming;
     private bool roped;
+    private bool deroping;
     private float ropePos;
     private float curHealth;
     private Tools selected;
+
+    // Physics jank
+    private Vector2 lastPos;
 
     void Start()
     {
@@ -53,7 +62,7 @@ public class PlayerController : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        // Quick hack to avoid annyoing glitches with rope physics.
+        // Quick hack to avoid annoying glitches with rope physics killing the player.
         if (roped) return;
 
         float impact = 0;
@@ -73,10 +82,12 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+
         CheckHealth();
         if (dead) return;
 
         HandleInventory();
+        GetAxisInput();
 
         if (roped)
         {
@@ -101,6 +112,12 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    void FixedUpdate()
+    {
+        if (roped || deroping)
+            HandleRopedMovementFixed();
+    }
+
     private void CheckHealth()
     {
         if (curHealth < 0)
@@ -112,6 +129,12 @@ public class PlayerController : MonoBehaviour
             float deathTorque = Random.Range(-1f, 1f);
             rb.AddTorque(deathTorque);
         }
+    }
+
+    private void GetAxisInput()
+    {
+        horizontal = Input.GetAxisRaw("Horizontal");
+        vertical = Input.GetAxisRaw("Vertical");
     }
 
     private void HandleInventory()
@@ -128,18 +151,12 @@ public class PlayerController : MonoBehaviour
 
     private void HandleRopedMovement()
     {
-        if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
-        {
-            roped = false;
-            return;
-        }
-
-        float vertical = Input.GetAxisRaw("Vertical");
         ropePos -= vertical * ropeMoveSpeed * Time.deltaTime;
         ropePos = Mathf.Clamp01(ropePos);
 
-        if (ropePos >= 1)
+        if (ropePos >= 1 || Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
         {
+            deroping = true;
             roped = false;
             return;
         }
@@ -151,9 +168,31 @@ public class PlayerController : MonoBehaviour
         float lerpT = scaledPos - lowerIndex; // Keep the scale but subtract the lower index to get our lerp t
         Vector2 playerPos = Vector2.Lerp(points[lowerIndex], points[lowerIndex + 1], lerpT);
 
+    }
+
+    private void HandleRopedMovementFixed()
+    {
+        if (deroping)
+        {
+            Vector2 vel = (rb.position - lastPos) * (1 / Time.fixedDeltaTime);
+
+            // Add a little go-juice if you're trying to move sideways when you let go.
+            vel.x += horizontal * ropeJumpVelocity;
+
+            rb.velocity = vel;
+            deroping = false;
+        }
+
+        Vector2[] points = rope.GetPoints();
+        int divisions = points.Length - 1; // Gaps between each point that we can lerp between.
+        float scaledPos = ropePos * divisions; // ropePos (0 to 1) * no. of gaps scales it to (0 to points.Length -1)
+        int lowerIndex = Mathf.FloorToInt(scaledPos); // Floor to make sure we pick a valid index from the points array
+        float lerpT = scaledPos - lowerIndex; // Keep the scale but subtract the lower index to get our lerp t
+        Vector2 playerPos = Vector2.Lerp(points[lowerIndex], points[lowerIndex + 1], lerpT);
+
+        lastPos = rb.position;
         rb.MovePosition(playerPos);
 
-        float horizontal = Input.GetAxisRaw("Horizontal");
         rope.AddForceAtSegment(lowerIndex, new Vector2(horizontal, 0) * ropeSwingForce);
     }
 
@@ -239,7 +278,7 @@ public class PlayerController : MonoBehaviour
     {
         Vector3 ropeSource = new Vector3(
             transform.position.x + (force.normalized.x * 0.5f),
-            transform.position.y - 0.3f,
+            transform.position.y - 0.2f,
             0
         );
         rope.CreateRope(ropeSource, force);

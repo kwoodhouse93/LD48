@@ -22,6 +22,7 @@ public class TerrainGenerator : MonoBehaviour
 
     [Header("Ledge Generation")]
     [SerializeField] private GameObject ledge;
+    [SerializeField] private float ledgeStartY;
     [SerializeField] private float minLedgeDist;
     [SerializeField] private float maxLedgeDist;
     [SerializeField] private float minLedgeX;
@@ -128,16 +129,16 @@ public class TerrainGenerator : MonoBehaviour
 
     private void GenerateLedges()
     {
-        float y = -5f;
+        float y = ledgeStartY;
         do
         {
-            Object.Instantiate(
+            GameObject obj = Object.Instantiate(
                 ledge,
-                new Vector3(Random.Range(minLedgeX, maxLedgeX), Random.Range(y, y + (maxLedgeDist - minLedgeDist))),
+                new Vector3(Random.Range(minLedgeX, maxLedgeX), Random.Range(y, y - (maxLedgeDist - minLedgeDist))),
                 Quaternion.AngleAxis(Random.Range(-10f, 10f), Vector3.forward),
                 transform
             );
-            y -= minLedgeDist;
-        } while (y < maxLedgeDepth);
+            y = obj.transform.position.y - minLedgeDist;
+        } while (y > -maxLedgeDepth);
     }
 }
