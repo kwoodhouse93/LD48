@@ -17,6 +17,8 @@ public class Rope : MonoBehaviour
 
     public void CreateRope(Vector3 startPos, Vector3 endForce)
     {
+        DestroyRope();
+
         ropeSource = new Vector3(startPos.x, startPos.y, 0);
         Vector3 startPoint = ropeSource;
         for (int i = 0; i < segmentCount; i++)
@@ -48,13 +50,27 @@ public class Rope : MonoBehaviour
         }
     }
 
-    public void DestroyRope()
+    private void DestroyRope()
     {
-        Debug.Log("Destroying rope");
         foreach (GameObject r in ropeSegments)
         {
             Object.Destroy(r);
         }
         ropeSegments.Clear();
+    }
+
+    public Vector2[] GetPoints()
+    {
+        Vector2[] points = new Vector2[ropeSegments.Count];
+        for (int i = 0; i < ropeSegments.Count; i++)
+        {
+            points[i] = ropeSegments[i].transform.position;
+        }
+        return points;
+    }
+
+    public void AddForceAtSegment(int index, Vector2 force)
+    {
+        ropeSegments[index].GetComponent<Rigidbody2D>().AddForce(force);
     }
 }

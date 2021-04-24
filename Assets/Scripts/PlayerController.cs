@@ -19,6 +19,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float walkForceScale;
     [SerializeField] private float launchForceScale;
     [SerializeField] private float maxLaunchForce;
+    [SerializeField] private float ropeMoveSpeed;
+    [SerializeField] private float ropeSwingForce;
     [SerializeField] private float groundCheckRadius = 0.1f;
     [SerializeField] private LayerMask groundLayers;
 
@@ -35,6 +37,7 @@ public class PlayerController : MonoBehaviour
     private bool dead;
     private bool aiming;
     private bool roped;
+    private float ropePos;
     private float curHealth;
     private Tools selected;
 
@@ -50,6 +53,9 @@ public class PlayerController : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D collision)
     {
+        // Quick hack to avoid annyoing glitches with rope physics.
+        if (roped) return;
+
         float impact = 0;
 
         // Find largest relative velocity
@@ -67,7 +73,36 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        CheckHealth();
         if (dead) return;
+
+        HandleInventory();
+
+        if (roped)
+        {
+            HandleRopedMovement();
+            return;
+        }
+
+        if (aiming)
+        {
+            HandleAiming();
+        }
+
+        // if (IsGrounded())
+        // {
+        //     float horizontal = Input.GetAxisRaw("Horizontal");
+        //     Walk(horizontal);
+        // }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            aiming = true;
+        }
+    }
+
+    private void CheckHealth()
+    {
         if (curHealth < 0)
         {
             dead = true;
@@ -77,7 +112,10 @@ public class PlayerController : MonoBehaviour
             float deathTorque = Random.Range(-1f, 1f);
             rb.AddTorque(deathTorque);
         }
+    }
 
+    private void HandleInventory()
+    {
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
             selected = Tools.Jump;
@@ -86,73 +124,81 @@ public class PlayerController : MonoBehaviour
         {
             selected = Tools.Rope;
         }
+    }
 
-        if (roped)
+    private void HandleRopedMovement()
+    {
+        if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
         {
-            if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
-            {
-                rope.DestroyRope();
-                roped = false;
-            }
-            // Rope movement
+            roped = false;
             return;
         }
 
-        if (aiming)
+        float vertical = Input.GetAxisRaw("Vertical");
+        ropePos -= vertical * ropeMoveSpeed * Time.deltaTime;
+        ropePos = Mathf.Clamp01(ropePos);
+
+        if (ropePos >= 1)
         {
-            // Allow cancel with right click or escape
-            if (Input.GetMouseButton(1) || Input.GetKey(KeyCode.Space))
-            {
-                aiming = false;
-                ClearArc();
-                return;
-            }
+            roped = false;
+            return;
+        }
 
-            Vector3 mousePos = getMousePosition();
-            Vector3 force = GetLaunchForce(mousePos);
+        Vector2[] points = rope.GetPoints();
+        int divisions = points.Length - 1; // Gaps between each point that we can lerp between.
+        float scaledPos = ropePos * divisions; // ropePos (0 to 1) * no. of gaps scales it to (0 to points.Length -1)
+        int lowerIndex = Mathf.FloorToInt(scaledPos); // Floor to make sure we pick a valid index from the points array
+        float lerpT = scaledPos - lowerIndex; // Keep the scale but subtract the lower index to get our lerp t
+        Vector2 playerPos = Vector2.Lerp(points[lowerIndex], points[lowerIndex + 1], lerpT);
 
-            // Fire on release
-            if (Input.GetMouseButtonUp(0))
-            {
-                aiming = false;
-                ClearArc();
+        rb.MovePosition(playerPos);
 
-                if (IsGrounded())
-                {
-                    switch (selected)
-                    {
-                        case Tools.Jump:
-                            Launch(force);
-                            break;
-                        case Tools.Rope:
-                            DeployRope(force);
-                            roped = true;
-                            break;
+        float horizontal = Input.GetAxisRaw("Horizontal");
+        Debug.Log("swing input: " + horizontal);
+        rope.AddForceAtSegment(lowerIndex, new Vector2(horizontal, 0) * ropeSwingForce);
+    }
 
-                    }
-                }
-                return;
-            }
+    private void HandleAiming()
+    {
+        // Allow cancel with right click or escape
+        if (Input.GetMouseButton(1) || Input.GetKey(KeyCode.Space))
+        {
+            aiming = false;
+            ClearArc();
+            return;
+        }
+
+        Vector3 mousePos = getMousePosition();
+        Vector3 force = GetLaunchForce(mousePos);
+
+        // Fire on release
+        if (Input.GetMouseButtonUp(0))
+        {
+            aiming = false;
+            ClearArc();
 
             if (IsGrounded())
             {
-                DrawArc(force);
+                switch (selected)
+                {
+                    case Tools.Jump:
+                        Launch(force);
+                        break;
+                    case Tools.Rope:
+                        DeployRope(force);
+                        break;
+                }
             }
-            else
-            {
-                ClearArc();
-            }
+            return;
         }
 
         if (IsGrounded())
         {
-            float horizontal = Input.GetAxisRaw("Horizontal");
-            Walk(horizontal);
+            DrawArc(force);
         }
-
-        if (Input.GetMouseButtonDown(0))
+        else
         {
-            aiming = true;
+            ClearArc();
         }
     }
 
@@ -198,6 +244,8 @@ public class PlayerController : MonoBehaviour
             0
         );
         rope.CreateRope(ropeSource, force);
+        ropePos = 0;
+        roped = true;
     }
 
     private void DrawArc(Vector3 force)
