@@ -1,4 +1,6 @@
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
@@ -30,6 +32,13 @@ public class PlayerController : MonoBehaviour
     [Header("Health parameters")]
     [SerializeField] private float maxHealth;
     [SerializeField] private float fallDamageThreshold;
+
+    [Header("UI references")]
+    [SerializeField] private TextMeshProUGUI instructionText;
+    [SerializeField] private TextMeshProUGUI jumpText;
+    [SerializeField] private TextMeshProUGUI ropeText;
+    [SerializeField] private GameObject jumpIcon;
+    [SerializeField] private GameObject ropeIcon;
 
     // Component references
     private Rigidbody2D rb;
@@ -86,6 +95,7 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        UpdateUI();
 
         CheckHealth();
         if (dead) return;
@@ -102,6 +112,7 @@ public class PlayerController : MonoBehaviour
         if (aiming)
         {
             HandleAiming();
+            return;
         }
 
         // if (IsGrounded())
@@ -110,7 +121,7 @@ public class PlayerController : MonoBehaviour
         //     Walk(horizontal);
         // }
 
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
         {
             aiming = true;
         }
@@ -150,10 +161,81 @@ public class PlayerController : MonoBehaviour
         {
             selected = Tools.Jump;
         }
-        if (Input.GetKeyDown(KeyCode.Alpha2))
+        else if (Input.GetKeyDown(KeyCode.Alpha2))
         {
             selected = Tools.Rope;
         }
+        else if (Input.GetKeyDown(KeyCode.Z))
+        {
+            if (selected == Tools.Jump) selected = Tools.Rope;
+            else if (selected == Tools.Rope) selected = Tools.Jump;
+        }
+    }
+
+    private void UpdateUI()
+    {
+        string tool = "JUMP";
+        string toolAction = "JUMP";
+        if (selected == Tools.Rope)
+        {
+            tool = "ROPE";
+            toolAction = "SET UP ROPE";
+        }
+
+        if (dead)
+            instructionText.SetText("");
+        else if (aiming)
+        {
+            if (Input.GetMouseButton(0))
+                instructionText.SetText("Release click to " + toolAction);
+            else
+                instructionText.SetText("[SPACE] again to " + toolAction);
+        }
+        else if (roped)
+        {
+            instructionText.SetText("[WASD] to move, Click or [SPACE] to LET GO");
+        }
+        else
+        {
+            instructionText.SetText("Click and hold or [SPACE] to AIM " + tool);
+        }
+
+
+        if (selected == Tools.Jump)
+        {
+            if (aiming)
+            {
+                jumpIcon.GetComponent<Image>().color = Color.cyan;
+            }
+            else
+            {
+                jumpIcon.GetComponent<Image>().color = Color.red;
+            }
+            jumpText.color = Color.red;
+            jumpIcon.SetActive(true);
+            ropeText.color = Color.white;
+            ropeIcon.SetActive(false);
+        }
+        if (selected == Tools.Rope)
+        {
+            if (aiming)
+            {
+                ropeIcon.GetComponent<Image>().color = Color.cyan;
+            }
+            else if (roped)
+            {
+                ropeIcon.GetComponent<Image>().color = Color.green;
+            }
+            else
+            {
+                ropeIcon.GetComponent<Image>().color = Color.red;
+            }
+            ropeText.color = Color.red;
+            ropeIcon.SetActive(true);
+            jumpText.color = Color.white;
+            jumpIcon.SetActive(false);
+        }
+
     }
 
     private void HandleRopedMovement()
@@ -206,7 +288,7 @@ public class PlayerController : MonoBehaviour
     private void HandleAiming()
     {
         // Allow cancel with right click or escape
-        if (Input.GetMouseButton(1) || Input.GetKey(KeyCode.Space))
+        if (Input.GetMouseButton(1) || Input.GetKeyDown(KeyCode.Escape))
         {
             aiming = false;
             ClearArc();
@@ -216,8 +298,8 @@ public class PlayerController : MonoBehaviour
         Vector3 mousePos = getMousePosition();
         Vector3 force = GetLaunchForce(mousePos);
 
-        // Fire on release
-        if (Input.GetMouseButtonUp(0))
+        // Fire on release or space
+        if (Input.GetMouseButtonUp(0) || Input.GetKeyDown(KeyCode.Space))
         {
             aiming = false;
             ClearArc();

@@ -22,8 +22,13 @@ public class GameRenderer : MonoBehaviour
     // Private vars used to maintain game state.
     private Vector2Int playerOrigin; // Bottom left corner of player
 
-    void Start()
+    private float ppu;
+    public float PPU => ppu;
+
+    void Awake()
     {
+        ppu = (CANVAS_HEIGHT / 2) / Camera.main.orthographicSize;
+
         // Init texture
         texture = new Texture2D(CANVAS_WIDTH, CANVAS_HEIGHT);
         texture.wrapMode = TextureWrapMode.Clamp;
@@ -43,7 +48,7 @@ public class GameRenderer : MonoBehaviour
         // Render texture to cover camera (assumes a fixed aspect of 16:9)
         spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
         Rect rect = new Rect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        spriteRenderer.sprite = Sprite.Create(texture, rect, Vector2.one * .5f, (CANVAS_HEIGHT / 2) / Camera.main.orthographicSize);
+        spriteRenderer.sprite = Sprite.Create(texture, rect, Vector2.one * .5f, ppu);
         spriteRenderer.sortingLayerID = SortingLayer.NameToID("BG");
 
         // Set up gradients for sampling

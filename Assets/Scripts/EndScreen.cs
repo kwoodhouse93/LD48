@@ -18,7 +18,10 @@ public class EndScreen : MonoBehaviour
         {
             distanceFormatted = Mathf.FloorToInt(d / 1000) + " km";
         }
-        distanceFormatted = Mathf.FloorToInt(d) + " m";
+        else
+        {
+            distanceFormatted = Mathf.FloorToInt(d) + " m";
+        }
         distanceText.SetText(distanceFormatted);
     }
 
@@ -26,7 +29,7 @@ public class EndScreen : MonoBehaviour
     {
         time = t;
         System.TimeSpan timeSpan = System.TimeSpan.FromSeconds(time);
-        timeFormatted = string.Format("{1:D2}:{2:D2}", timeSpan.Minutes, timeSpan.Seconds);
+        timeFormatted = string.Format("{0:D2}m {1:D2}s", timeSpan.Minutes, timeSpan.Seconds);
         timeText.SetText(timeFormatted);
     }
 }

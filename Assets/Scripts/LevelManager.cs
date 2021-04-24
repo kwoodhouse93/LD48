@@ -1,10 +1,13 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class LevelManager : MonoBehaviour
 {
     [SerializeField] private Transform player;
-
+    [SerializeField] private TextMeshProUGUI depthText;
+    [SerializeField] private TextMeshProUGUI timeText;
     [SerializeField] private EndScreen endScreen;
 
     [SerializeField] private Animator fadeToBlack;
@@ -30,6 +33,13 @@ public class LevelManager : MonoBehaviour
         if (player == null)
             throw new System.Exception("LevelManager player cannot be null");
 
+        if (!deadHandled)
+        {
+            float curDepth = playerStartY - player.transform.position.y;
+            float curTime = Time.time - startTime;
+            UpdateUI(curDepth, curTime);
+        }
+
         if (!deadHandled && player.GetComponent<PlayerController>().IsDead)
         {
             deadHandled = true;
@@ -37,11 +47,33 @@ public class LevelManager : MonoBehaviour
 
             finalDistance = playerStartY - player.transform.position.y;
             totalTime = Time.time - startTime;
-            Debug.Log("Distance reached: " + finalDistance + " Time taken: " + totalTime);
         }
     }
 
-    public void TriggerEndScreen()
+    private void UpdateUI(float depth, float time)
+    {
+        string distanceFormatted;
+        if (depth > 1000)
+        {
+            distanceFormatted = Mathf.FloorToInt(depth / 1000) + " km";
+        }
+        else
+        {
+            distanceFormatted = Mathf.FloorToInt(depth) + " m";
+        }
+        depthText.SetText(distanceFormatted);
+
+        System.TimeSpan timeSpan = System.TimeSpan.FromSeconds(time);
+        string timeFormatted = string.Format("{0:D2}m {1:D2}s", timeSpan.Minutes, timeSpan.Seconds);
+        timeText.SetText(timeFormatted);
+    }
+
+    public void Retry()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    void TriggerEndScreen()
     {
         StartCoroutine(ShowEndScreen());
     }
