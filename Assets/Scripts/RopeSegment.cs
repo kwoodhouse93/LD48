@@ -66,4 +66,17 @@ public class RopeSegment : MonoBehaviour
             startHinge.connectedAnchor = LocalEnd;
         }
     }
+
+    public void ConnectEnd(Rigidbody2D connectTo)
+    {
+        if (width == 0 || length == 0) throw new System.Exception("Trying to connect rope segment end while width or length is 0");
+
+        if (endHinge == null)
+        {
+            endHinge = gameObject.AddComponent<HingeJoint2D>();
+        }
+        endHinge.connectedBody = connectTo;
+        endHinge.anchor = LocalEnd;
+        // Auto-configures connected anchor.
+    }
 }

@@ -23,6 +23,7 @@ public class LaunchArcRenderer : MonoBehaviour
         float g = gravity * rb.gravityScale;
         float vel = (force.magnitude / rb.mass);
         float angle = Vector2.Angle(fromAngle, force);
+        if (force.y < 0) angle = 360 - angle;
         float radAngle = Mathf.Deg2Rad * angle;
 
         float maxDist = (2 * vel * Mathf.Sin(radAngle)) / g;

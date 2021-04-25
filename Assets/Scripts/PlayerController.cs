@@ -71,6 +71,8 @@ public class PlayerController : MonoBehaviour
         curHealth = maxHealth;
         healthBar.SetMaxHealth(maxHealth);
         healthBar.SetHealth(maxHealth);
+
+        selected = Tools.Rope;
     }
 
     void OnCollisionEnter2D(Collision2D collision)
@@ -249,14 +251,6 @@ public class PlayerController : MonoBehaviour
             roped = false;
             return;
         }
-
-        Vector2[] points = rope.GetPoints();
-        int divisions = points.Length - 1; // Gaps between each point that we can lerp between.
-        float scaledPos = ropePos * divisions; // ropePos (0 to 1) * no. of gaps scales it to (0 to points.Length -1)
-        int lowerIndex = Mathf.FloorToInt(scaledPos); // Floor to make sure we pick a valid index from the points array
-        float lerpT = scaledPos - lowerIndex; // Keep the scale but subtract the lower index to get our lerp t
-        Vector2 playerPos = Vector2.Lerp(points[lowerIndex], points[lowerIndex + 1], lerpT);
-
     }
 
     private void HandleRopedMovementFixed()
@@ -277,7 +271,9 @@ public class PlayerController : MonoBehaviour
         float scaledPos = ropePos * divisions; // ropePos (0 to 1) * no. of gaps scales it to (0 to points.Length -1)
         int lowerIndex = Mathf.FloorToInt(scaledPos); // Floor to make sure we pick a valid index from the points array
         float lerpT = scaledPos - lowerIndex; // Keep the scale but subtract the lower index to get our lerp t
-        Vector2 playerPos = Vector2.Lerp(points[lowerIndex], points[lowerIndex + 1], lerpT);
+        Vector2 playerPos;
+        if (lowerIndex >= points.Length - 1) playerPos = points[lowerIndex];
+        else playerPos = Vector2.Lerp(points[lowerIndex], points[lowerIndex + 1], lerpT);
 
         lastPos = rb.position;
         rb.MovePosition(playerPos);
