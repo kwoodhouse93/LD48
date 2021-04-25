@@ -9,6 +9,7 @@ public class PlayerController : MonoBehaviour
     {
         Jump,
         Rope,
+        Flag,
     }
 
     [Header("References")]
@@ -18,6 +19,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Rope rope;
     [SerializeField] private GameObject spawnOnDeath;
     [SerializeField] private GameObject spawnOnCollision;
+    [SerializeField] private GameObject winFlag;
+    [SerializeField] private FollowPlayer cam;
 
     [Header("Movement parameters")]
     [SerializeField] private float walkForceScale;
@@ -49,7 +52,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private AudioClip ropeSlideAudioClip;
     [SerializeField] private float ropeSlideRepeatTime;
     [SerializeField] private float ropeSlidePitchJitter;
-
+    [SerializeField] private AudioSource victoryAudioSource;
 
     // Component references
     private Rigidbody2D rb;
@@ -67,6 +70,8 @@ public class PlayerController : MonoBehaviour
     private float ropePos;
     private float curHealth;
     private Tools selected;
+    private bool readyToWin;
+    private bool winTriggered;
 
     // Physics jank
     private Vector2 lastPos;
@@ -76,6 +81,7 @@ public class PlayerController : MonoBehaviour
 
     // Public accessors
     public bool IsDead => dead;
+    public bool HasWon => winTriggered;
 
     void Start()
     {
@@ -111,13 +117,24 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        if (winTriggered) return;
+
         UpdateUI();
 
         CheckHealth();
         if (dead) return;
 
+        if (!roped && !aiming && readyToWin)
+        {
+            selected = Tools.Flag;
+            UpdateUI();
+            HandleFlagPlacement();
+            return;
+        }
+
         HandleInventory();
         GetAxisInput();
+
 
         if (roped)
         {
@@ -194,6 +211,18 @@ public class PlayerController : MonoBehaviour
 
     private void UpdateUI()
     {
+        if (selected == Tools.Flag)
+        {
+            instructionText.SetText("Click or [SPACE] to PLANT FLAG");
+            jumpText.color = Color.red;
+            jumpIcon.SetActive(true);
+            jumpIcon.GetComponent<Image>().color = Color.red;
+            jumpText.SetText("FLAG");
+            ropeIcon.SetActive(false);
+            ropeText.SetText("");
+            return;
+        }
+
         string tool = "JUMP";
         string toolAction = "JUMP";
         if (selected == Tools.Rope)
@@ -256,6 +285,20 @@ public class PlayerController : MonoBehaviour
             jumpIcon.SetActive(false);
         }
 
+    }
+
+    private void HandleFlagPlacement()
+    {
+        if (winTriggered) return;
+        if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
+        {
+            winTriggered = true;
+            winFlag.SetActive(true);
+            Music m = FindObjectOfType<Music>();
+            if (m != null) m.Destroy();
+            victoryAudioSource.Play();
+            cam.Drift();
+        }
     }
 
     private void HandleRopedMovement()
@@ -419,5 +462,10 @@ public class PlayerController : MonoBehaviour
     public void KillPlayer()
     {
         curHealth = 0;
+    }
+
+    public void ReadyToWin()
+    {
+        readyToWin = true;
     }
 }

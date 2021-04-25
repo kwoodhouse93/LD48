@@ -24,14 +24,17 @@ public class LevelManager : MonoBehaviour
 
     [Header("Game over")]
     [SerializeField] private Animator fadeToBlack;
-    [SerializeField] private float transitionTriggerDelay;
+    [SerializeField] private float deadTransitionTriggerDelay;
+    [SerializeField] private float winTransitionTriggerDelay;
     [SerializeField] private float transitionRunTime;
-    [SerializeField] private EndScreen endScreen;
+    [SerializeField] private EndScreen deadScreen;
+    [SerializeField] private EndScreen winScreen;
 
-    [Header("Milestone ping")]
+    [Header("Milestones")]
     [SerializeField] private float milestoneInterval;
     [SerializeField] private float milestoneFlashTime;
     [SerializeField] private AudioClip milestoneAudioClip;
+    [SerializeField] private float winDepth;
 
     private AudioSource audioSource;
     private float playerStartY;
@@ -40,6 +43,7 @@ public class LevelManager : MonoBehaviour
     private float startTime;
     private float totalTime;
     private bool deadHandled;
+    private bool winHandled;
     private float lastMilestone;
     private float unflashDepthMilestone;
 
@@ -47,7 +51,8 @@ public class LevelManager : MonoBehaviour
     {
         if (player == null)
             throw new System.Exception("LevelManager player cannot be null");
-        playerStartY = player.transform.position.y;
+        // playerStartY = player.transform.position.y;
+        playerStartY = 0;
         startTime = Time.time;
         audioSource = GetComponent<AudioSource>();
     }
@@ -62,7 +67,7 @@ public class LevelManager : MonoBehaviour
             depthText.color = Color.white;
         }
 
-        if (!deadHandled)
+        if (!deadHandled && !winHandled)
         {
             float curDepth = playerStartY - player.transform.position.y;
             float curTime = Time.time - startTime;
@@ -82,12 +87,24 @@ public class LevelManager : MonoBehaviour
                 unflashDepthMilestone = Time.time + milestoneFlashTime;
                 lastMilestone += milestoneInterval;
             }
+
+            if (curDepth > winDepth)
+            {
+                player.GetComponent<PlayerController>().ReadyToWin();
+            }
         }
 
-        if (!deadHandled && player.GetComponent<PlayerController>().IsDead)
+        if (!deadHandled && !winHandled && player.GetComponent<PlayerController>().IsDead)
         {
             deadHandled = true;
-            TriggerEndScreen();
+            TriggerDeadScreen();
+
+            totalTime = Time.time - startTime;
+        }
+        if (!deadHandled && !winHandled && player.GetComponent<PlayerController>().HasWon)
+        {
+            winHandled = true;
+            TriggerWinScreen();
 
             totalTime = Time.time - startTime;
         }
@@ -116,15 +133,15 @@ public class LevelManager : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
-    void TriggerEndScreen()
+    void TriggerDeadScreen()
     {
-        StartCoroutine(ShowEndScreen());
+        StartCoroutine(ShowDeadScreen());
     }
 
-    IEnumerator ShowEndScreen()
+    IEnumerator ShowDeadScreen()
     {
         // Wait a hot sec
-        yield return new WaitForSeconds(transitionTriggerDelay);
+        yield return new WaitForSeconds(deadTransitionTriggerDelay);
 
         gameUI.SetActive(false);
 
@@ -133,8 +150,30 @@ public class LevelManager : MonoBehaviour
         yield return new WaitForSeconds(transitionRunTime);
 
         // After that, show results
-        endScreen.SetDistance(bestDepth);
-        endScreen.SetTime(totalTime);
-        endScreen.gameObject.SetActive(true);
+        deadScreen.SetDistance(bestDepth);
+        deadScreen.SetTime(totalTime);
+        deadScreen.gameObject.SetActive(true);
+    }
+
+    void TriggerWinScreen()
+    {
+        StartCoroutine(ShowWinScreen());
+    }
+
+    IEnumerator ShowWinScreen()
+    {
+        // Wait a hot sec
+        yield return new WaitForSeconds(winTransitionTriggerDelay);
+
+        gameUI.SetActive(false);
+
+        // Start fading to black
+        fadeToBlack.SetTrigger("FadeToBlack");
+        yield return new WaitForSeconds(transitionRunTime);
+
+        // After that, show results
+        winScreen.SetDistance(bestDepth);
+        winScreen.SetTime(totalTime);
+        winScreen.gameObject.SetActive(true);
     }
 }
