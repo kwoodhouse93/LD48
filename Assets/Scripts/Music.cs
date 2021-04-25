@@ -10,6 +10,16 @@ public class Music : MonoBehaviour
 
     private bool startedLoop;
 
+    void Start()
+    {
+        DontDestroyOnLoad(gameObject);
+    }
+
+    public void Destroy()
+    {
+        Destroy(gameObject);
+    }
+
     void FixedUpdate()
     {
         if (!introSource.isPlaying && !startedLoop)
