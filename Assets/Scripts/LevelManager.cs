@@ -1,21 +1,34 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering.Universal;
 using UnityEngine.SceneManagement;
 
 [RequireComponent(typeof(AudioSource))]
 public class LevelManager : MonoBehaviour
 {
     [SerializeField] private Transform player;
+
+    [Header("UI")]
     [SerializeField] private TextMeshProUGUI depthText;
     [SerializeField] private TextMeshProUGUI timeText;
     [SerializeField] private GameObject gameUI;
-    [SerializeField] private EndScreen endScreen;
 
+    [Header("Light falloff")]
+    [SerializeField] private Light2D globalLight;
+    [SerializeField] private Light2D playerLight;
+    [SerializeField] private float lightFalloffStart;
+    [SerializeField] private float lightFalloffRange;
+    [SerializeField] private float maxLight;
+    [SerializeField] private float minLight;
+
+    [Header("Game over")]
     [SerializeField] private Animator fadeToBlack;
     [SerializeField] private float transitionTriggerDelay;
     [SerializeField] private float transitionRunTime;
+    [SerializeField] private EndScreen endScreen;
 
+    [Header("Milestone ping")]
     [SerializeField] private float milestoneInterval;
     [SerializeField] private float milestoneFlashTime;
     [SerializeField] private AudioClip milestoneAudioClip;
@@ -57,6 +70,10 @@ public class LevelManager : MonoBehaviour
             bestDepth = Mathf.Max(curDepth, bestDepth);
 
             UpdateUI(curDepth, curTime);
+
+            float globalIntensity = Mathf.Lerp(maxLight, minLight, (curDepth - lightFalloffStart) / lightFalloffRange);
+            globalLight.intensity = globalIntensity;
+            playerLight.intensity = 1 - globalIntensity;
 
             if (curDepth >= lastMilestone + milestoneInterval)
             {
