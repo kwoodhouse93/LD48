@@ -40,6 +40,17 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private GameObject jumpIcon;
     [SerializeField] private GameObject ropeIcon;
 
+    [Header("Audio")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip deathAudioClip;
+    [SerializeField] private AudioClip jumpAudioClip;
+    [SerializeField] private AudioClip ropeThrowAudioClip;
+    [SerializeField] private AudioSource ropeSlideAudioSource;
+    [SerializeField] private AudioClip ropeSlideAudioClip;
+    [SerializeField] private float ropeSlideRepeatTime;
+    [SerializeField] private float ropeSlidePitchJitter;
+
+
     // Component references
     private Rigidbody2D rb;
     private LineRenderer lr;
@@ -59,6 +70,9 @@ public class PlayerController : MonoBehaviour
 
     // Physics jank
     private Vector2 lastPos;
+
+    // Audio timing
+    private float nextSlideAudio;
 
     // Public accessors
     public bool IsDead => dead;
@@ -137,10 +151,14 @@ public class PlayerController : MonoBehaviour
 
     private void CheckHealth()
     {
-        if (!dead && curHealth < 0)
+        if (!dead && curHealth <= 0)
         {
+            ClearArc();
+
             if (spawnOnDeath != null)
                 Object.Instantiate(spawnOnDeath, transform.position, transform.rotation);
+
+            audioSource.PlayOneShot(deathAudioClip);
 
             dead = true;
             rb.constraints = RigidbodyConstraints2D.None;
@@ -245,8 +263,17 @@ public class PlayerController : MonoBehaviour
         ropePos -= vertical * ropeMoveSpeed * Time.deltaTime;
         ropePos = Mathf.Clamp01(ropePos);
 
+        if (Time.time > nextSlideAudio && Mathf.Abs(vertical) > 0.1)
+        {
+            ropeSlideAudioSource.pitch += Random.Range(-ropeSlidePitchJitter, ropeSlidePitchJitter);
+            ropeSlideAudioSource.PlayOneShot(ropeSlideAudioClip, 0.5f);
+            nextSlideAudio = Time.time + ropeSlideRepeatTime;
+        }
+
         if (ropePos >= 1 || Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
         {
+            audioSource.PlayOneShot(jumpAudioClip, 0.5f);
+
             deroping = true;
             roped = false;
             return;
@@ -356,11 +383,13 @@ public class PlayerController : MonoBehaviour
 
     private void Launch(Vector3 force)
     {
+        audioSource.PlayOneShot(jumpAudioClip);
         rb.AddForce(force, ForceMode2D.Impulse);
     }
 
     private void DeployRope(Vector3 force)
     {
+        audioSource.PlayOneShot(ropeThrowAudioClip);
         Vector3 ropeSource = new Vector3(
             transform.position.x + (force.normalized.x * 0.5f),
             transform.position.y - 0.2f,
@@ -385,5 +414,10 @@ public class PlayerController : MonoBehaviour
     {
         Vector2 mousePosition = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
         return Camera.main.ScreenToWorldPoint(mousePosition);
+    }
+
+    public void KillPlayer()
+    {
+        curHealth = 0;
     }
 }

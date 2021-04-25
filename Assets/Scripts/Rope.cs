@@ -27,6 +27,8 @@ public class Rope : MonoBehaviour
     void Awake()
     {
         lineRenderer = GetComponent<LineRenderer>();
+        lineRenderer.startWidth = segmentWidth;
+        lineRenderer.endWidth = segmentWidth;
     }
 
     void Update()
