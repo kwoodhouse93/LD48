@@ -51,8 +51,7 @@ public class LevelManager : MonoBehaviour
     {
         if (player == null)
             throw new System.Exception("LevelManager player cannot be null");
-        // playerStartY = player.transform.position.y;
-        playerStartY = 0;
+        playerStartY = player.transform.position.y;
         startTime = Time.time;
         audioSource = GetComponent<AudioSource>();
     }
