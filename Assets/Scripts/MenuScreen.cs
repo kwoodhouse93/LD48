@@ -8,7 +8,10 @@ public class MenuScreen : MonoBehaviour
     [SerializeField] private List<GameObject> letters;
     [SerializeField] private List<MenuRope> ropes;
 
-    // Start is called before the first frame update
+    [Header("Level loading")]
+    [SerializeField] private SceneTransition sceneTransition;
+    [SerializeField] private int nextBuildIndex;
+
     void Start()
     {
         if (letters.Count != ropes.Count) throw new System.Exception("Must have same number of ropes and letters");
@@ -25,9 +28,8 @@ public class MenuScreen : MonoBehaviour
         }
     }
 
-    // Update is called once per frame
-    void Update()
+    public void Play()
     {
-
+        sceneTransition.LoadWithTransition(nextBuildIndex);
     }
 }
