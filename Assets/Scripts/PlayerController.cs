@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 [RequireComponent(typeof(Rigidbody2D))]
@@ -44,6 +45,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private GameObject ropeIcon;
 
     [Header("Audio")]
+    [SerializeField] private MuteButton mute;
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip deathAudioClip;
     [SerializeField] private AudioClip jumpAudioClip;
@@ -93,6 +95,27 @@ public class PlayerController : MonoBehaviour
         healthBar.SetHealth(maxHealth);
 
         selected = Tools.Rope;
+
+        mute.onChange.AddListener(OnToggleMute);
+    }
+
+    private void OnToggleMute()
+    {
+        if (PlayerPrefs.HasKey("sound"))
+        {
+            string sound = PlayerPrefs.GetString("sound");
+            if (sound == "false")
+            {
+                audioSource.volume = 0f;
+                ropeSlideAudioSource.volume = 0f;
+                victoryAudioSource.volume = 0f;
+                return;
+            }
+        }
+        audioSource.volume = 1f;
+        ropeSlideAudioSource.volume = 1f;
+        victoryAudioSource.volume = 1f;
+
     }
 
     void OnCollisionEnter2D(Collision2D collision)
@@ -154,7 +177,7 @@ public class PlayerController : MonoBehaviour
         //     Walk(horizontal);
         // }
 
-        if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
+        if ((Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject()) || Input.GetKeyDown(KeyCode.Space))
         {
             aiming = true;
         }
@@ -236,9 +259,9 @@ public class PlayerController : MonoBehaviour
         else if (aiming)
         {
             if (Input.GetMouseButton(0))
-                instructionText.SetText("Release click to " + toolAction);
+                instructionText.SetText("Aim with mouse, release click to " + toolAction);
             else
-                instructionText.SetText("[SPACE] again to " + toolAction);
+                instructionText.SetText("Aim with mouse, [SPACE] again to " + toolAction);
         }
         else if (roped)
         {
@@ -290,7 +313,7 @@ public class PlayerController : MonoBehaviour
     private void HandleFlagPlacement()
     {
         if (winTriggered) return;
-        if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
+        if ((Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject()) || Input.GetKeyDown(KeyCode.Space))
         {
             winTriggered = true;
             winFlag.SetActive(true);
@@ -313,7 +336,7 @@ public class PlayerController : MonoBehaviour
             nextSlideAudio = Time.time + ropeSlideRepeatTime;
         }
 
-        if (ropePos >= 1 || Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
+        if (ropePos >= 1 || Input.GetKeyDown(KeyCode.Space) || (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject()))
         {
             audioSource.PlayOneShot(jumpAudioClip, 0.5f);
 

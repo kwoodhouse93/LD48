@@ -81,7 +81,8 @@ public class Rope : MonoBehaviour
             }
 
             startPoint += Quaternion.AngleAxis(startAngle, Vector3.forward) * endForce.normalized * spawnSeparation;
-            startAngle += 40 + (5 * i);
+            if (endForce.x >= 0) startAngle += 40 + (5 * i);
+            else startAngle -= 40 + (5 * i);
 
             ropeSegments.Add(r);
         }

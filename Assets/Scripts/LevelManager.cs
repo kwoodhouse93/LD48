@@ -34,6 +34,7 @@ public class LevelManager : MonoBehaviour
     [SerializeField] private float milestoneInterval;
     [SerializeField] private float milestoneFlashTime;
     [SerializeField] private AudioClip milestoneAudioClip;
+    [SerializeField] private MuteButton mute;
     [SerializeField] private float winDepth;
 
     private AudioSource audioSource;
@@ -54,6 +55,22 @@ public class LevelManager : MonoBehaviour
         playerStartY = player.transform.position.y;
         startTime = Time.time;
         audioSource = GetComponent<AudioSource>();
+
+        mute.onChange.AddListener(OnToggleMute);
+    }
+
+    private void OnToggleMute()
+    {
+        if (PlayerPrefs.HasKey("sound"))
+        {
+            string sound = PlayerPrefs.GetString("sound");
+            if (sound == "false")
+            {
+                audioSource.volume = 0f;
+                return;
+            }
+        }
+        audioSource.volume = 1f;
     }
 
     void Update()

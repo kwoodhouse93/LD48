@@ -13,6 +13,48 @@ public class Music : MonoBehaviour
     void Start()
     {
         DontDestroyOnLoad(gameObject);
+
+        // Load volume
+        if (PlayerPrefs.HasKey("sound"))
+        {
+            string sound = PlayerPrefs.GetString("sound");
+            if (sound == "false")
+            {
+                introSource.volume = 0f;
+                loopSource.volume = 0f;
+            }
+            else
+            {
+                introSource.volume = 1f;
+                loopSource.volume = 1f;
+            }
+        }
+    }
+
+    public void ToggleMute()
+    {
+        if (PlayerPrefs.HasKey("sound"))
+        {
+            string sound = PlayerPrefs.GetString("sound");
+            if (sound == "false")
+            {
+                PlayerPrefs.SetString("sound", "true");
+                introSource.volume = 1f;
+                loopSource.volume = 1f;
+            }
+            else
+            {
+                PlayerPrefs.SetString("sound", "false");
+                introSource.volume = 0f;
+                loopSource.volume = 0f;
+            }
+        }
+        else
+        {
+            PlayerPrefs.SetString("sound", "false");
+            introSource.volume = 0f;
+            loopSource.volume = 0f;
+        }
     }
 
     public void Destroy()
